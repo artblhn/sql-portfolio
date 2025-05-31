@@ -561,9 +561,9 @@
 
         .tooltip {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
+    top: 0;
+    right: 100%;
+    transform: translateX(0) translateY(0);
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -574,11 +574,10 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
-    z-index: 1000;
+    z-index: 9999;
     max-height: 400px;
     overflow-y: auto;
 }
-
 
         .info-button:hover .tooltip,
         .info-button:focus .tooltip {
