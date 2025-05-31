@@ -229,7 +229,7 @@
             padding: 2rem;
             transition: all 0.3s ease;
             position: relative;
-            overflow: visible;
+            overflow: hidden;
             margin-bottom: 2rem;
         }
 
@@ -579,23 +579,13 @@
             overflow-y: auto;
         }
 
-.close-tooltip {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: transparent;
-    border: none;
-    font-size: 1.2rem;
-    color: var(--text-secondary);
-    cursor: pointer;
-}
-        
-        .tooltip.tooltip-visible {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
-}
-        
+        .info-button:hover .tooltip,
+        .info-button:focus .tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
         .tooltip h4 {
             color: var(--accent);
             margin-bottom: 1rem;
@@ -1282,76 +1272,48 @@ FROM \`pet-project-sales.petproject1.user_behavior_dataset\``
 
         // Render tasks
         function renderTasks() {
-    const container = document.getElementById('tasksContainer');
-
-    tasks.forEach(task => {
-        const taskCard = document.createElement('div');
-        taskCard.className = 'task-card';
-
-        taskCard.innerHTML = `
-            <div class="task-header">
-                <div class="task-number">${task.id}</div>
-                <h3 class="task-title">${task.title}</h3>
-                <button class="info-button" type="button">
-                    i
-                    <div class="tooltip">
-                        <button class="close-tooltip" onclick="closeTooltip(this)">×</button>
-                        <h4>Оригінальний запит для Google BigQuery</h4>
-                        <p>
-                            Цей запит був написаний для Google BigQuery з використанням Standard SQL.
-                            Нижче наведена версія, адаптована для SQLite для роботи в браузері.
-                        </p>
-                        <pre><code class="language-sql">${highlightSQL(task.bigQuerySql)}</code></pre>
+            const container = document.getElementById('tasksContainer');
+            
+            tasks.forEach(task => {
+                const taskCard = document.createElement('div');
+                taskCard.className = 'task-card';
+                taskCard.innerHTML = `
+                    <div class="task-header">
+                        <div class="task-number">${task.id}</div>
+                        <h3 class="task-title">${task.title}</h3>
+                        <button class="info-button" tabindex="0">
+                            i
+                            <div class="tooltip">
+                                <h4>Оригінальний запит для Google BigQuery</h4>
+                                <p>
+                                    Цей запит був написаний для Google BigQuery з використанням Standard SQL. 
+                                    Нижче наведена версія, адаптована для SQLite для роботи в браузері.
+                                </p>
+                                <pre><code class="language-sql">${highlightSQL(task.bigQuerySql)}</code></pre>
+                            </div>
+                        </button>
                     </div>
-                </button>
-            </div>
-            <p class="task-description">${task.description}</p>
-            <div class="sql-editor">
-                <div class="editor-header">
-                    <div class="editor-dot"></div>
-                    <div class="editor-dot"></div>
-                    <div class="editor-dot"></div>
-                </div>
-                <div class="code-editor-wrapper">
-                    <pre class="code-highlight"><code class="language-sql" id="highlight-${task.id}">${highlightSQL(task.sql)}</code></pre>
-                    <textarea class="code-input" id="sql-${task.id}" spellcheck="false">${task.sql}</textarea>
-                </div>
-            </div>
-            <button class="run-button" onclick="runQuery(${task.id})">
-                <span>Виконати запит</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-            </button>
-            <div id="results-${task.id}"></div>
-        `;
-
-        container.appendChild(taskCard);
-    });
-}
-
-        // Закриття всіх tooltip-ів при кліку поза ними
-document.addEventListener('click', function(event) {
-    const isInfoButton = event.target.closest('.info-button');
-    const allTooltips = document.querySelectorAll('.tooltip');
-
-    // Закриваємо всі tooltip-и
-    allTooltips.forEach(tooltip => {
-        tooltip.classList.remove('tooltip-visible');
-    });
-
-    if (isInfoButton) {
-        const tooltip = isInfoButton.querySelector('.tooltip');
-        tooltip.classList.add('tooltip-visible');
-        event.stopPropagation(); // Блокує закриття одразу
-    }
-});
-
-// Закриття по кнопці ×
-function closeTooltip(button) {
-    const tooltip = button.closest('.tooltip');
-    tooltip.classList.remove('tooltip-visible');
-}
+                    <p class="task-description">${task.description}</p>
+                    <div class="sql-editor">
+                        <div class="editor-header">
+                            <div class="editor-dot"></div>
+                            <div class="editor-dot"></div>
+                            <div class="editor-dot"></div>
+                        </div>
+                        <div class="code-editor-wrapper">
+                            <pre class="code-highlight"><code class="language-sql" id="highlight-${task.id}">${highlightSQL(task.sql)}</code></pre>
+                            <textarea class="code-input" id="sql-${task.id}" spellcheck="false">${task.sql}</textarea>
+                        </div>
+                    </div>
+                    <button class="run-button" onclick="runQuery(${task.id})">
+                        <span>Виконати запит</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </button>
+                    <div id="results-${task.id}"></div>
+                `;
+                container.appendChild(taskCard);
                 
                 // Add event listener for syntax highlighting
                 const textarea = taskCard.querySelector(`#sql-${task.id}`);
@@ -1506,4 +1468,3 @@ function closeTooltip(button) {
     </script>
 </body>
 </html>
-                
