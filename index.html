@@ -906,7 +906,7 @@
                 <p>
                     Всі SQL запити в цьому проєкті були розроблені та протестовані в Google BigQuery з використанням Standard SQL. 
                     Для демонстрації на цьому сайті запити були адаптовані під SQLite, що може призвести до незначних відмінностей у синтаксисі. 
-                    Оригінальні запити для BigQuery доступні для завантаження.
+                    Оригінальні запити для BigQuery доступні для завантаження, а також через кнопку підказки до кожного завдання.
                 </p>
                 <button class="download-queries-button" onclick="downloadBigQueryQueries()">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
@@ -1333,8 +1333,8 @@ FROM \`pet-project-sales.petproject1.user_behavior_dataset\``
                             <button class="close-button" onclick="closeInfoModal(${task.id})">×</button>
                         </div>
                         <p>
-                            Цей запит був написаний для Google BigQuery з використанням Standard SQL. 
-                            Нижче наведена версія, адаптована для SQLite для роботи в браузері.
+                            Спочатку цей запит був написаний для Google BigQuery з використанням Standard SQL. 
+                            Нижче наведений варіант оригінального коду.
                         </p>
                         <pre><code class="language-sql">${highlightSQL(task.bigQuerySql)}</code></pre>
                     </div>
