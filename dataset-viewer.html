@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dataset Viewer - User Behavior Dataset</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --accent: #3b82f6;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(30, 41, 59, 0.95);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Stats */
+        .stats-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            display: block;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Table Container */
+        .table-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .controls {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .filter-select {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        /* Data Table */
+        .data-table-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background: #16213e;
+            color: var(--accent);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .data-table th:hover {
+            background: #1e293b;
+        }
+
+        .data-table th::after {
+            content: ' ↕';
+            opacity: 0.3;
+            font-size: 12px;
+        }
+
+        .data-table th.sorted-asc::after {
+            content: ' ↑';
+            opacity: 1;
+        }
+
+        .data-table th.sorted-desc::after {
+            content: ' ↓';
+            opacity: 1;
+        }
+
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .data-table tr:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .data-table tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-secondary);
+        }
+
+        .loading::after {
+            content: '...';
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+        }
+
+        .pagination-button {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-button:hover:not(:disabled) {
+            background: var(--accent);
+            color: white;
+        }
+
+        .pagination-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            color: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .table-scroll {
+                max-height: 400px;
+            }
+
+            .data-table {
+                font-size: 12px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1>User Behavior Dataset</h1>
+            <a href="index.html" class="back-button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Повернутися до портфоліо
+            </a>
+        </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-container" id="statsContainer">
+        <div class="stat-card">
+            <span class="stat-number" id="totalRecords">-</span>
+            <span class="stat-label">Всього записів</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" id="avgAge">-</span>
+            <span class="stat-label">Середній вік</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" id="avgScreenTime">-</span>
+            <span class="stat-label">Середній час екрану (год)</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number" id="uniqueDevices">-</span>
+            <span class="stat-label">Унікальних пристроїв</span>
+        </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="table-container">
+        <!-- Controls -->
+        <div class="controls">
+            <input type="text" class="search-input" id="searchInput" placeholder="Пошук по таблиці...">
+            <select class="filter-select" id="osFilter">
+                <option value="">Всі ОС</option>
+                <option value="Android">Android</option>
+                <option value="iOS">iOS</option>
+            </select>
+            <select class="filter-select" id="genderFilter">
+                <option value="">Всі статі</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+        </div>
+
+        <!-- Table -->
+        <div class="data-table-wrapper">
+            <div class="loading" id="loadingMessage">Завантаження даних...</div>
+            <div class="table-scroll" id="tableContainer" style="display: none;">
+                <table class="data-table" id="dataTable">
+                    <thead id="tableHead"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination" style="display: none;">
+                <button class="pagination-button" id="prevPage">← Попередня</button>
+                <span class="pagination-info" id="pageInfo"></span>
+                <button class="pagination-button" id="nextPage">Наступна →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        const rowsPerPage = 50;
+        let currentSort = { column: null, direction: 'asc' };
+
+        // Load CSV data
+        async function loadData() {
+            try {
+                const response = await fetch('user_behavior_dataset.csv');
+                const csvText = await response.text();
+                
+                const results = Papa.parse(csvText, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true
+                });
+                
+                allData = results.data;
+                filteredData = [...allData];
+                
+                displayStats();
+                renderTable();
+                
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('tableContainer').style.display = 'block';
+                document.getElementById('pagination').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                document.getElementById('loadingMessage').innerHTML = 
+                    '<div style="color: #ef4444;">Помилка завантаження даних</div>';
+            }
+        }
+
+        // Display statistics
+        function displayStats() {
+            document.getElementById('totalRecords').textContent = allData.length;
+            
+            const avgAge = allData.reduce((sum, row) => sum + (row.Age || 0), 0) / allData.length;
+            document.getElementById('avgAge').textContent = Math.round(avgAge);
+            
+            const avgScreenTime = allData.reduce((sum, row) => sum + (row['Screen_On_Time__hours_day_'] || 0), 0) / allData.length;
+            document.getElementById('avgScreenTime').textContent = avgScreenTime.toFixed(1);
+            
+            const uniqueDevices = new Set(allData.map(row => row.Device_Model)).size;
+            document.getElementById('uniqueDevices').textContent = uniqueDevices;
+        }
+
+        // Render table
+        function renderTable() {
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const pageData = filteredData.slice(startIndex, endIndex);
+            
+            // Render header
+            const thead = document.getElementById('tableHead');
+            if (thead.children.length === 0 && allData.length > 0) {
+                const headerRow = document.createElement('tr');
+                Object.keys(allData[0]).forEach(key => {
+                    const th = document.createElement('th');
+                    th.textContent = key;
+                    th.onclick = () => sortTable(key);
+                    if (currentSort.column === key) {
+                        th.classList.add(currentSort.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
+                    }
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+            }
+            
+            // Render body
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            pageData.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value !== null ? value : '';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            
+            // Update pagination
+            updatePagination();
+        }
+
+        // Sort table
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            
+            filteredData.sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+                
+                if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                
+                if (currentSort.direction === 'asc') {
+                    return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+                } else {
+                    return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+                }
+            });
+            
+            currentPage = 1;
+            renderTable();
+        }
+
+        // Filter data
+        function filterData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const osFilter = document.getElementById('osFilter').value;
+            const genderFilter = document.getElementById('genderFilter').value;
+            
+            filteredData = allData.filter(row => {
+                const matchesSearch = !searchTerm || 
+                    Object.values(row).some(val => 
+                        String(val).toLowerCase().includes(searchTerm)
+                    );
+                
+                const matchesOS = !osFilter || row.Operating_System === osFilter;
+                const matchesGender = !genderFilter || row.Gender === genderFilter;
+                
+                return matchesSearch && matchesOS && matchesGender;
+            });
+            
+            currentPage = 1;
+            renderTable();
+        }
+
+        // Update pagination
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            
+            document.getElementById('pageInfo').textContent = 
+                `Сторінка ${currentPage} з ${totalPages} (${filteredData.length} записів)`;
+            
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages;
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', filterData);
+        document.getElementById('osFilter').addEventListener('change', filterData);
+        document.getElementById('genderFilter').addEventListener('change', filterData);
+        
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+        
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>
